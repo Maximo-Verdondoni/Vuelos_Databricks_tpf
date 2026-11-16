@@ -12,6 +12,7 @@ databricks:
   silver_schema: "silver"
   gold_schema: "gold"
   volume_raw_path: "/Volumes/vuelos_dev/bronze/raw_landing"
+  grader_principal: "PPaez@austral.edu.ar"
 
 pipeline:
   year: 2015
@@ -35,8 +36,8 @@ apis:
       - "wind_gusts_10m"
       - "cloud_cover"
     timezone: "auto"
-    batch_size_locations: 10  # Agrupa coordenadas para optimizar llamadas y evitar HTTP 429
-    sleep_seconds: 2.0
+    batch_size_locations: 5  # Agrupa coordenadas para optimizar llamadas y evitar HTTP 429
+    sleep_seconds: 10.0
   nager_date:
     base_url: "https://date.nager.at/api/v3/PublicHolidays"
     country_code: "US"
