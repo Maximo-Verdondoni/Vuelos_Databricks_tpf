@@ -193,4 +193,4 @@ SHOW GRANTS ON SCHEMA vuelos_dev.gold;
 - Castillo, Juan
 - Leoni, Juan Martín
 - Rubiolo, Facundo
-- Máximo, Verdondoni
+- Verdondoni, Máximo
