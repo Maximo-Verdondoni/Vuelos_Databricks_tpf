@@ -1,0 +1,42 @@
+environment: "local"
+
+local:
+  raw_path: "data/raw"
+  bronze_path: "data/bronze"
+  silver_path: "data/silver"
+  gold_path: "data/gold"
+
+databricks:
+  catalog: "vuelos_dev"
+  bronze_schema: "bronze"
+  silver_schema: "silver"
+  gold_schema: "gold"
+  volume_raw_path: "/Volumes/vuelos_dev/bronze/raw_landing"
+
+pipeline:
+  year: 2015
+  start_date: "2015-01-01"
+  end_date: "2015-12-31"
+  top_n_airports: 50
+  delay_threshold_minutes: 15
+  ml_splits:
+    train_end_month: 8
+    val_end_month: 10
+    test_end_month: 12
+
+apis:
+  open_meteo:
+    base_url: "https://archive-api.open-meteo.com/v1/archive"
+    hourly_variables:
+      - "temperature_2m"
+      - "precipitation"
+      - "snowfall"
+      - "wind_speed_10m"
+      - "wind_gusts_10m"
+      - "cloud_cover"
+    timezone: "auto"
+    batch_size_locations: 10  # Agrupa coordenadas para optimizar llamadas y evitar HTTP 429
+    sleep_seconds: 2.0
+  nager_date:
+    base_url: "https://date.nager.at/api/v3/PublicHolidays"
+    country_code: "US"
