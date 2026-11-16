@@ -1,3 +1,4 @@
+import os
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,14 +18,22 @@ def _read_silver(spark: SparkSession, config: Dict[str, Any], table_name: str):
 
 
 def _write_silver(df, config: Dict[str, Any], table_name: str) -> None:
-    is_local = config["environment"] == "local"
-    target = (
-        str(Path(config["local"]["silver_path"]) / table_name)
-        if is_local
-        else f"{config['databricks']['catalog']}.{config['databricks']['silver_schema']}.{table_name}"
-    )
-    writer = df.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
-    writer.save(target) if is_local else writer.saveAsTable(target)
+    """Escribe la tabla Silver en disco local (si está en dev local) o en Unity Catalog (si está en Databricks)."""
+    is_databricks = "DATABRICKS_RUNTIME_VERSION" in os.environ
+    is_local = (config.get("environment") == "local") and not is_databricks
+
+    if is_local:
+        target = str(Path(config["local"]["silver_path"]) / table_name)
+        writer = df.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
+        writer.save(target)
+    else:
+        db_cfg = config.get("databricks", {})
+        catalog = db_cfg.get("catalog", "vuelos_dev")
+        schema = db_cfg.get("silver_schema", "silver")
+        target = f"{catalog}.{schema}.{table_name}"
+        
+        writer = df.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
+        writer.saveAsTable(target)
 
 
 def run_build_silver_unified(spark: SparkSession, config: Dict[str, Any]) -> None:
