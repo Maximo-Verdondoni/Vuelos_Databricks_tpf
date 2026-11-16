@@ -13,15 +13,17 @@ class RateLimitError(Exception):
 
 @retry(
     retry=retry_if_exception_type((requests.RequestException, RateLimitError)),
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=2, min=4, max=60),
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=15, min=60, max=120),
     reraise=True,
 )
-def fetch_json_with_retry(url: str, params: Dict[str, Any] | None = None, timeout: int = 30) -> Any:
-    """Ejecuta una petición GET con reintentos ante errores de red o HTTP 429."""
+def fetch_json_with_retry(url: str, params: Dict[str, Any] | None = None, timeout: int = 45) -> Any:
+    """Ejecuta una petición GET con reintentos y pausa de 60s ante HTTP 429."""
     response = requests.get(url, params=params, timeout=timeout)
     if response.status_code == 429:
-        logger.warning("HTTP 429 recibido desde %s. Esperando antes de reintentar...", url)
+        retry_after = int(response.headers.get("Retry-After", 60))
+        logger.warning("HTTP 429 recibido desde %s. Respetando ventana de cuota (%ds)...", url, retry_after)
+        time.sleep(retry_after)
         raise RateLimitError(f"Rate limit excedido en {url}")
     response.raise_for_status()
     return response.json()
