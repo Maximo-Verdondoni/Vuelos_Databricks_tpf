@@ -6,11 +6,28 @@ import sys
 from pathlib import Path
 
 # Asegurar que la raíz del repo esté en sys.path (el runner vive en <repo>/notebooks/)
-REPO_ROOT = Path(__file__).resolve().parent.parent
+def _find_repo_root() -> Path:
+    """Busca la raíz del repo (carpeta que contiene conf/parameters.yaml y src/).
+    En Databricks serverless __file__ no existe, así que probamos varias pistas."""
+    starts = []
+    try:
+        starts.append(Path(__file__).resolve().parent)
+    except NameError:
+        pass
+    if sys.argv and sys.argv[0].endswith(".py"):
+        starts.append(Path(sys.argv[0]).resolve().parent)
+    starts.append(Path.cwd())
+
+    for start in starts:
+        for p in [start, *start.parents]:
+            if (p / "conf" / "parameters.yaml").exists() and (p / "src").is_dir():
+                return p
+    raise RuntimeError(f"No se encontró la raíz del repo. Probé desde: {starts}")
+
+
+REPO_ROOT = _find_repo_root()
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-
-from src.common.config_loader import load_config
 
 logging.basicConfig(
     level=logging.INFO,
