@@ -1,4 +1,4 @@
-environment: "local"
+environment: "databricks"
 
 local:
   raw_path: "data/raw"
