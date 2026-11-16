@@ -1,5 +1,7 @@
+import builtins
 import importlib
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -14,28 +16,41 @@ from src.common.spark_session import get_spark_session
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
-def run_step(module_path: str, func_name: str) -> None:
-    """Lee parámetros del Job de Databricks (widgets), carga config y ejecuta la etapa."""
-    overrides = {}
+def _get_dbutils():
     try:
-        from pyspark.dbutils import DBUtils
+        from databricks.sdk.runtime import dbutils
+        return dbutils
+    except ImportError:
+        return getattr(builtins, "dbutils", None)
+
+
+def run_step(module_path: str, func_name: str) -> None:
+    """Detecta entorno Databricks/Local, lee parámetros del Job y ejecuta la etapa."""
+    is_databricks = "DATABRICKS_RUNTIME_VERSION" in os.environ
+    overrides = {}
+
+    if is_databricks:
         spark = get_spark_session(is_local=False)
-        dbutils = DBUtils(spark)
+        overrides["environment"] = "databricks"
+        dbutils = _get_dbutils()
 
-        dbutils.widgets.text("environment", "databricks")
-        dbutils.widgets.text("catalog", "vuelos_dev")
-        dbutils.widgets.text("start_date", "2015-01-01")
-        dbutils.widgets.text("end_date", "2015-12-31")
+        if dbutils is not None:
+            dbutils.widgets.text("environment", "databricks")
+            dbutils.widgets.text("catalog", "vuelos_dev")
+            dbutils.widgets.text("start_date", "2015-01-01")
+            dbutils.widgets.text("end_date", "2015-12-31")
 
-        overrides = {
-            "environment": dbutils.widgets.get("environment"),
-            "databricks.catalog": dbutils.widgets.get("catalog"),
-            "pipeline.start_date": dbutils.widgets.get("start_date"),
-            "pipeline.end_date": dbutils.widgets.get("end_date"),
-        }
-    except Exception:
+            overrides.update({
+                "environment": dbutils.widgets.get("environment") or "databricks",
+                "databricks.catalog": dbutils.widgets.get("catalog") or "vuelos_dev",
+                "pipeline.start_date": dbutils.widgets.get("start_date") or "2015-01-01",
+                "pipeline.end_date": dbutils.widgets.get("end_date") or "2015-12-31",
+            })
+    else:
         spark = get_spark_session(is_local=True)
 
     config = load_config(overrides=overrides)
+    logging.info("Ejecutando %s.%s en modo='%s'", module_path, func_name, config["environment"])
+
     module = importlib.import_module(module_path)
     getattr(module, func_name)(spark, config)
