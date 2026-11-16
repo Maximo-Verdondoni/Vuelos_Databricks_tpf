@@ -1,0 +1,80 @@
+# ==========================================
+# Entornos virtuales y Python
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================================
+# Datos locales y formatos de Big Data
+# ==========================================
+# Crucial: evita subir los CSVs de Kaggle o tablas Delta/Parquet locales
+data/
+*.csv
+*.parquet
+*.orc
+*.avro
+*.json
+!conf/*.json
+*.db
+*.sqlite3
+
+# ==========================================
+# Spark, Delta Lake y Databricks
+# ==========================================
+spark-warehouse/
+metastore_db/
+derby.log
+.databricks/
+*.crc
+
+# ==========================================
+# Secretos y configuración local
+# ==========================================
+.env
+.env.local
+*.pem
+*.key
+secrets.yaml
+conf/local_*.yaml
+
+# ==========================================
+# Testing, Cobertura y Logs
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.log
+logs/
+
+# ==========================================
+# IDEs y Sistemas Operativos
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

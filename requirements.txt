@@ -1,0 +1,15 @@
+# Procesamiento de Big Data y Delta Lake (compatible con Databricks Runtime)
+pyspark>=3.5.0,<3.6.0
+delta-spark>=3.1.0,<3.3.0
+pandas>=2.0.0
+pyarrow>=14.0.0
+
+# Consumo de APIs REST (Open-Meteo y Nager.Date) y reintentos
+requests>=2.31.0
+tenacity>=8.2.0
+
+# Gestión de configuración y parámetros por entorno
+PyYAML>=6.0.1
+
+# Testing y calidad de código
+pytest>=8.0.0
