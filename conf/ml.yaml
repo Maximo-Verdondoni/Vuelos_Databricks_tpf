@@ -1,0 +1,93 @@
+# ============================================================
+# Configuración del Job de ML (job_vuelos_ml_training)
+# ============================================================
+
+data:
+  training_table: ml_flight_delay_training   # en vuelos_dev.gold
+  label_col: target_is_delayed_15
+  split_col: dataset_split
+  id_cols: [flight_sk, flight_date]
+
+features:
+  # Se codifican con StringIndexer + OneHotEncoder
+  categorical:
+    - airline_code
+    - origin_airport_code
+    - dest_airport_code
+    - day_of_week
+    - scheduled_dep_hour
+  # Se imputan con la mediana de train
+  numeric:
+    - is_weekend
+    - is_us_holiday
+    - scheduled_time_min
+    - distance_miles
+    - temperature_2m
+    - precipitation
+    - snowfall
+    - wind_speed_10m
+    - wind_gusts_10m
+    - cloud_cover
+    - airline_hist_delay_rate
+    - airline_hist_avg_dep_delay
+    - origin_hist_delay_rate
+    - origin_hist_avg_dep_delay
+  # Columnas que NUNCA pueden ser features (se conocen después de la salida)
+  forbidden:
+    - departure_time_hhmm
+    - departure_delay_min
+    - taxi_out_min
+    - wheels_off_hhmm
+    - elapsed_time_min
+    - air_time_min
+    - wheels_on_hhmm
+    - taxi_in_min
+    - arrival_time_hhmm
+    - arrival_delay_min
+    - is_cancelled
+    - is_diverted
+    - cancellation_reason
+    - air_system_delay_min
+    - security_delay_min
+    - airline_delay_min
+    - late_aircraft_delay_min
+    - weather_delay_min
+    - is_delayed_15
+    - target_is_delayed_15
+
+training:
+  seed: 42
+  sample_fraction: 1.0        # 0.1 para probar barato; 1.0 para el entrenamiento final
+  use_class_weights: true
+  selection_metric: areaUnderPR   # se elige el modelo por PR-AUC en validation
+  models:
+    logistic_regression:
+      maxIter: 50
+      regParam: 0.01
+      elasticNetParam: 0.0
+    gbt:
+      maxIter: 20
+      maxDepth: 5
+      stepSize: 0.1
+      maxBins: 400
+
+registry:
+  catalog: vuelos_dev
+  schema: ml
+  model_name: flight_delay_classifier
+  alias: champion
+
+mlflow:
+  experiment_path: "/Users/mhverdondoni@mail.austral.edu.ar/vuelos_flight_delay"   # Databricks
+  local_experiment_name: "vuelos_flight_delay"                                      # local (carpeta mlruns/)
+
+paths:
+  databricks_tmp_volume: "/Volumes/vuelos_dev/ml/tmp_mlflow"   # temporales de Spark ML en serverless
+  local_output_dir: "data/ml"      
+
+outputs:
+  predictions_table: flight_delay_predictions
+  metrics_table: model_metrics
+
+scoring:  
+  split: "test"   # qué partición se puntúa (simula vuelos nuevos)

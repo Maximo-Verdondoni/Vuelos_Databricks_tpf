@@ -79,6 +79,7 @@ def run_step(module_path: str, func_name: str) -> None:
         spark = get_spark_session(is_local=True)
 
     config = load_config(CONFIG_PATH, overrides=overrides)
+    config["_repo_root"] = str(REPO_ROOT)  # <- NUEVA: para que ML encuentre conf/ml.yaml
     logging.info("Ejecutando %s.%s en modo='%s'", module_path, func_name, config["environment"])
 
     module = importlib.import_module(module_path)

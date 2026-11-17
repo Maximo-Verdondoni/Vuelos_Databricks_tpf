@@ -2,14 +2,8 @@ import importlib
 from datetime import date
 import pytest
 from pyspark.sql import functions as F
-from src.common.spark_session import get_spark_session
 
-
-@pytest.fixture(scope="module")
-def spark():
-    return get_spark_session(app_name="TestVuelosTPI", is_local=True)
-
-
+@pytest.mark.spark
 def test_weather_categorization_handles_missing_and_extremes(spark):
     """Verifica que los vuelos sin clima reciban 'Sin dato' y los extremos se clasifiquen bien."""
     gold_star = importlib.import_module("src.gold.04a_build_gold_star")
@@ -29,7 +23,7 @@ def test_weather_categorization_handles_missing_and_extremes(spark):
     assert res[2]["p"] == "Nieve" and res[2]["w"] == "Viento fuerte (>=35 km/h)"
     assert res[3]["p"] == "Lluvia moderada/fuerte" and res[3]["w"] == "Viento moderado (20-34 km/h)"
 
-
+@pytest.mark.spark
 def test_historical_window_has_no_data_leakage(spark):
     """Verifica que el cálculo histórico use estrictamente días previos (sin leakage intra-día)."""
     from pyspark.sql import Window
