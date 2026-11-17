@@ -2,7 +2,11 @@
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
+
+import matplotlib
+matplotlib.use("Agg")  # genera gráficos sin abrir ventanas (script y Databricks)
+import matplotlib.pyplot as plt
 
 import mlflow
 import mlflow.spark
@@ -96,6 +100,73 @@ def _threshold_metrics(scored: DataFrame, label: str, thresholds: List[float]) -
 
 
 # ---------------------------------------------------------------------------
+# Importancia de variables
+# ---------------------------------------------------------------------------
+def _feature_importance(model: PipelineModel, scored: DataFrame, ml_cfg: Dict[str, Any]) -> List[Tuple[str, float]]:
+    """Importancia por variable ORIGINAL (suma = 1).
+    GBT: featureImportances de Spark. Regresión logística: |coeficiente| agregado por variable."""
+    clf = model.stages[-1]
+
+    # Nombre de cada posición del vector 'features' (lo deja el VectorAssembler en los metadatos)
+    slot_names = {}
+    for attrs in scored.schema["features"].metadata["ml_attr"]["attrs"].values():
+        for a in attrs:
+            slot_names[a["idx"]] = a["name"]
+
+    if hasattr(clf, "featureImportances"):
+        raw = clf.featureImportances.toArray()
+    else:
+        raw = [abs(c) for c in clf.coefficients.toArray()]
+
+    feats = feature_columns(ml_cfg)
+    totals = {f: 0.0 for f in feats}
+    for idx, value in enumerate(raw):
+        name = slot_names.get(idx, "")
+        # name puede ser 'x_idx' (árboles), 'x_imp' (numéricas) o 'x_ohe_<valor>' (one-hot)
+        for f in feats:
+            if name in (f"{f}_idx", f"{f}_imp") or name.startswith(f"{f}_ohe"):
+                totals[f] += float(value)
+                break
+
+    total = sum(totals.values()) or 1.0
+    return sorted(((f, v / total) for f, v in totals.items()), key=lambda x: x[1], reverse=True)
+
+
+def _log_importance_to_mlflow(importance: List[Tuple[str, float]], model_name: str) -> None:
+    """Gráfico de barras + JSON en la corrida de MLflow del modelo."""
+    feats = [f for f, _ in importance][::-1]
+    vals = [v for _, v in importance][::-1]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.barh(feats, vals, color="#7FB3D5")
+    ax.set_xlabel("Importancia relativa (suma = 1)")
+    ax.set_title(f"Importancia de variables: {model_name}")
+    ax.grid(True, axis="x", alpha=0.3)
+    fig.tight_layout()
+
+    mlflow.log_figure(fig, f"feature_importance_{model_name}.png")
+    mlflow.log_dict(dict(importance), f"feature_importance_{model_name}.json")
+    plt.close(fig)
+
+
+def _save_feature_importance(spark: SparkSession, config: Dict[str, Any], ml_cfg: Dict[str, Any], rows: List[tuple]) -> None:
+    schema = ("run_id string, trained_at string, model_type string, feature string, "
+              "importance double, rank int, is_champion boolean")
+    df = spark.createDataFrame(rows, schema=schema)
+    table = ml_cfg["outputs"]["feature_importance_table"]
+
+    if config["environment"] == "local":
+        path = Path(config["_repo_root"]) / ml_cfg["paths"]["local_output_dir"] / table
+        df.write.format("delta").mode("append").save(str(path))
+        logger.info("Importancia de variables guardada en %s", path)
+    else:
+        reg = ml_cfg["registry"]
+        full_name = f"{reg['catalog']}.{reg['schema']}.{table}"
+        df.write.format("delta").mode("append").saveAsTable(full_name)
+        logger.info("Importancia de variables guardada en %s", full_name)
+
+
+# ---------------------------------------------------------------------------
 # Registro en Unity Catalog (solo Databricks)
 # ---------------------------------------------------------------------------
 def _register_in_uc(model_uri: str, ml_cfg: Dict[str, Any], model_type: str, threshold: float) -> str:
@@ -156,6 +227,7 @@ def run_train_model(spark: SparkSession, config: Dict[str, Any]) -> None:
         train, val = train.cache(), val.cache()
 
     metric_rows: List[tuple] = []
+    importance_rows: List[tuple] = []
     candidates = []
 
     with mlflow.start_run(run_name=f"train_{trained_at[:19]}") as parent_run:
@@ -195,6 +267,13 @@ def run_train_model(spark: SparkSession, config: Dict[str, Any]) -> None:
                 })
                 logger.info("%s en validation: PR-AUC=%.4f (azar=%.4f) ROC-AUC=%.4f F1=%.4f (umbral %.2f)",
                             name, auc["areaUnderPR"], val_pos_rate, auc["areaUnderROC"], best_t["f1"], best_t["threshold"])
+
+                importance = _feature_importance(model, scored_val, ml_cfg)
+                _log_importance_to_mlflow(importance, name)
+                logger.info("%s: top 5 variables -> %s", name,
+                            ", ".join(f"{f} ({v:.1%})" for f, v in importance[:5]))
+                for rank, (feat, value) in enumerate(importance, start=1):
+                    importance_rows.append((run_id, trained_at, name, feat, float(value), rank, False))
 
                 candidates.append({"name": name, "model": model, "auc": auc, "best": best_t})
                 for metric, value in [("pr_auc", auc["areaUnderPR"]), ("roc_auc", auc["areaUnderROC"]),
@@ -259,6 +338,9 @@ def run_train_model(spark: SparkSession, config: Dict[str, Any]) -> None:
 
     # 8. Historial de métricas en Delta
     _save_metrics_table(spark, config, ml_cfg, metric_rows)
+
+    importance_rows = [r[:6] + (r[2] == champion["name"],) for r in importance_rows]
+    _save_feature_importance(spark, config, ml_cfg, importance_rows)
 
     if is_local:
         train.unpersist()

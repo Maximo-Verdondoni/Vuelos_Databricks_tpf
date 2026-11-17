@@ -88,6 +88,7 @@ paths:
 outputs:
   predictions_table: flight_delay_predictions
   metrics_table: model_metrics
+  feature_importance_table: "feature_importance" 
 
 scoring:  
   split: "test"   # qué partición se puntúa (simula vuelos nuevos)

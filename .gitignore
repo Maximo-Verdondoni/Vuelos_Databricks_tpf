@@ -78,3 +78,10 @@ logs/
 *.swo
 .DS_Store
 Thumbs.db
+
+# ==========================================
+# IDEs y Sistemas Operativos
+# ==========================================
+mlflow.db
+mlartifacts/
+data/
