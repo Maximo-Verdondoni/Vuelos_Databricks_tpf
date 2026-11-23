@@ -78,8 +78,8 @@ registry:
   alias: champion
 
 mlflow:
-  experiment_path: "/Users/mhverdondoni@mail.austral.edu.ar/vuelos_flight_delay"   # Databricks
-  local_experiment_name: "vuelos_flight_delay"                                      # local (carpeta mlruns/)
+  experiment_path: "/Shared/vuelos_flight_delay"   # Databricks
+  local_experiment_name: "vuelos_flight_delay"     # local
 
 paths:
   databricks_tmp_volume: "/Volumes/vuelos_dev/ml/tmp_mlflow"   # temporales de Spark ML en serverless

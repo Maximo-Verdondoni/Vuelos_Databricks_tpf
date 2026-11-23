@@ -17,7 +17,6 @@ def run_apply_uc_governance(spark: SparkSession, config: Dict[str, Any]) -> None
     db_cfg = config["databricks"]
     catalog = db_cfg["catalog"]
     gold_schema = db_cfg["gold_schema"]
-    grader_principal = db_cfg.get("grader_principal")
 
     logger.info("Aplicando comentarios de diccionario de datos y permisos en %s.%s...", catalog, gold_schema)
 
@@ -66,8 +65,5 @@ def run_apply_uc_governance(spark: SparkSession, config: Dict[str, Any]) -> None
             f"ALTER COLUMN {col_name} COMMENT '{col_comment}'"
         )
 
-    # Otorgar acceso de lectura sobre Gold para la cátedra
-    spark.sql(f"GRANT USE CATALOG ON CATALOG {catalog} TO `{grader_principal}`")
-    spark.sql(f"GRANT USE SCHEMA ON SCHEMA {catalog}.{gold_schema} TO `{grader_principal}`")
-    spark.sql(f"GRANT SELECT ON SCHEMA {catalog}.{gold_schema} TO `{grader_principal}`")
-    logger.info("Gobernanza y permisos aplicados correctamente en Unity Catalog.")
+    # El acceso de la cátedra se gestiona con Delta Sharing (share_vuelos_tpf), no por código
+    logger.info("Diccionario de datos aplicado correctamente en Unity Catalog.")
