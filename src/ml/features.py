@@ -195,3 +195,7 @@ def run_feature_smoke_test(spark: SparkSession, config: Dict[str, Any]) -> None:
     logger.info("Preprocesamiento OK: vector de %d posiciones.", n_features)
     val_features.select(ml_cfg["data"]["label_col"], "features").show(5, truncate=80)
     logger.info("Smoke test de features finalizado OK.")
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_feature_smoke_test)

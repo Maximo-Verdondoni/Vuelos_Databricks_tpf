@@ -67,3 +67,7 @@ def run_apply_uc_governance(spark: SparkSession, config: Dict[str, Any]) -> None
 
     # El acceso de la cátedra se gestiona con Delta Sharing (share_vuelos_tpf), no por código
     logger.info("Diccionario de datos aplicado correctamente en Unity Catalog.")
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_apply_uc_governance)

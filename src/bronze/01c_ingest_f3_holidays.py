@@ -44,3 +44,7 @@ def run_ingest_f3_holidays(spark: SparkSession, config: Dict[str, Any], batch_id
     writer = df_holidays.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
     writer.save(target) if is_local else writer.saveAsTable(target)
     logger.info("Feriados Bronze guardados (%d registros).", len(records))
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_ingest_f3_holidays)

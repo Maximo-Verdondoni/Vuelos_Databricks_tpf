@@ -105,3 +105,7 @@ def run_ingest_f1(spark: SparkSession, config: Dict[str, Any], batch_id: str | N
         df_errors = spark.createDataFrame(error_records)
         err_target = _get_target_table_or_path(config, "ingestion_errors_f1")
         _write_delta(df_errors, err_target, is_local, mode="append")
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_ingest_f1)

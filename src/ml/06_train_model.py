@@ -346,3 +346,7 @@ def run_train_model(spark: SparkSession, config: Dict[str, Any]) -> None:
         train.unpersist()
         val.unpersist()
     logger.info("Entrenamiento finalizado OK.")
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_train_model)

@@ -107,3 +107,7 @@ def run_clean_weather(spark: SparkSession, config: Dict[str, Any]) -> None:
 
     _write_silver(df_weather_silver, config, "weather_silver")
     logger.info("Weather Silver guardado exitosamente (%d registros horarios).", df_weather_silver.count())
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_clean_weather)

@@ -171,3 +171,7 @@ def run_build_gold_ml(spark: SparkSession, config: Dict[str, Any]) -> None:
     )
     _write_gold(df_audit, config, "gold_b_audit_log")
     logger.info("Gold B guardado exitosamente (%d filas totales).", final_ml_count)
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_build_gold_ml)

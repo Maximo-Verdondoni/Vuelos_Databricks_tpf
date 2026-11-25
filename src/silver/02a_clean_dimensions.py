@@ -129,3 +129,7 @@ def run_clean_dimensions(spark: SparkSession, config: Dict[str, Any]) -> None:
     )
     _write_silver(df_holidays, config, "holidays_silver")
     logger.info("Dimensiones Silver guardadas exitosamente.")
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_clean_dimensions)

@@ -139,3 +139,7 @@ def run_build_silver_unified(spark: SparkSession, config: Dict[str, Any]) -> Non
     )
     _write_silver(df_quality, config, "silver_quality_metrics")
     logger.info("Silver unificado finalizado: %d filas totales, %d elegibles Gold B.", total_unified, completed_with_weather)
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_build_silver_unified)

@@ -144,3 +144,7 @@ def run_batch_scoring(spark: SparkSession, config: Dict[str, Any]) -> None:
         split, s["n"], 100 * s["pred_rate"], 100 * s["actual_rate"], precision, recall,
     )
     logger.info("Batch scoring finalizado OK.")
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_batch_scoring)

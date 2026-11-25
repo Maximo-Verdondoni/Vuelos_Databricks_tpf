@@ -151,3 +151,7 @@ def run_ingest_f2_weather(spark: SparkSession, config: Dict[str, Any], batch_id:
         err_target = _get_target_table_or_path(config, "ingestion_errors_f2")
         err_writer = df_err.write.format("delta").mode("append")
         err_writer.save(err_target) if is_local else err_writer.saveAsTable(err_target)
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_ingest_f2_weather)

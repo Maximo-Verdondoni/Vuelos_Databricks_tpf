@@ -99,3 +99,7 @@ def run_clean_flights(spark: SparkSession, config: Dict[str, Any]) -> None:
 
     _write_silver(df_typed, config, "flights_clean_silver")
     logger.info("Flights clean Silver guardado (%d filas).", df_typed.count())
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_clean_flights)

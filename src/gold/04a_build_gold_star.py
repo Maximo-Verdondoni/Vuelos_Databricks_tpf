@@ -232,3 +232,7 @@ def _run_analytical_validation_queries(
         ORDER BY avg_arrival_delay_min DESC
         LIMIT 10
     """).show(10, truncate=False)
+
+if __name__ == "__main__":
+    from src.common.job_context import run_job
+    run_job(run_build_gold_star)
