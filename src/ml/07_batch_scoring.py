@@ -86,7 +86,7 @@ def _write_predictions(df: DataFrame, config: Dict[str, Any], ml_cfg: Dict[str, 
 
 
 # ---------------------------------------------------------------------------
-# Entrada principal (la llama _job_runner.py)
+# Entrada principal
 # ---------------------------------------------------------------------------
 def run_batch_scoring(spark: SparkSession, config: Dict[str, Any]) -> None:
     ml_cfg = load_ml_config(config)
